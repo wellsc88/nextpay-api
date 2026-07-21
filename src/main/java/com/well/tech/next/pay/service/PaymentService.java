@@ -10,12 +10,14 @@ import com.well.tech.next.pay.mapper.PaymentMapper;
 import com.well.tech.next.pay.repository.CustomerRepository;
 import com.well.tech.next.pay.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
@@ -27,12 +29,31 @@ public class PaymentService {
     @Transactional
     public PaymentResponse create(CreatePaymentRequest request) {
 
+        log.info(
+                "Creating payment for customer with id: {}",
+                request.customerId()
+        );
+
         Customer customer = customerRepository.findById(request.customerId())
-                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+                .orElseThrow(() -> {
+                    log.warn(
+                            "Customer not found with id: {}",
+                            request.customerId()
+                    );
+
+                    return new ResourceNotFoundException(
+                            "Customer not found"
+                    );
+                });
 
         Payment payment = paymentMapper.toEntity(request, customer);
 
         Payment savedPayment = paymentRepository.save(payment);
+
+        log.info(
+                "Payment created successfully with id: {}",
+                savedPayment.getId()
+        );
 
         return paymentMapper.toResponse(savedPayment);
     }
@@ -42,10 +63,24 @@ public class PaymentService {
             UUID id,
             UpdatePaymentRequest request
     ) {
+
+        log.info("Updating payment with id: {}", id);
+
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+                .orElseThrow(() -> {
+                    log.warn("Payment not found with id: {}", id);
+
+                    return new ResourceNotFoundException(
+                            "Payment not found"
+                    );
+                });
 
         paymentMapper.updateEntity(payment, request);
+
+        log.info(
+                "Payment updated successfully with id: {}",
+                id
+        );
 
         return paymentMapper.toResponse(payment);
     }
@@ -53,8 +88,16 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public PaymentResponse findById(UUID id) {
 
+        log.info("Finding payment by id: {}", id);
+
         Payment payment = paymentRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Payment not found"));
+                .orElseThrow(() -> {
+                    log.warn("Payment not found with id: {}", id);
+
+                    return new ResourceNotFoundException(
+                            "Payment not found"
+                    );
+                });
 
         return paymentMapper.toResponse(payment);
     }
@@ -62,19 +105,36 @@ public class PaymentService {
     @Transactional(readOnly = true)
     public List<PaymentResponse> findAll() {
 
-        return paymentRepository.findAll()
+        log.info("Finding all payments");
+
+        List<PaymentResponse> payments = paymentRepository.findAll()
                 .stream()
                 .map(paymentMapper::toResponse)
                 .toList();
+
+        log.info("Found {} payments", payments.size());
+
+        return payments;
     }
 
     @Transactional
     public void delete(UUID id) {
 
+        log.info("Deleting payment with id: {}", id);
+
         if (!paymentRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Payment not found");
+            log.warn("Payment not found with id: {}", id);
+
+            throw new ResourceNotFoundException(
+                    "Payment not found"
+            );
         }
 
         paymentRepository.deleteById(id);
+
+        log.info(
+                "Payment deleted successfully with id: {}",
+                id
+        );
     }
 }
