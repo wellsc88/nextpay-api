@@ -12,8 +12,11 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+import static com.well.tech.next.pay.config.ApiVersion.API_BASE_PATH;
+import static com.well.tech.next.pay.config.ApiVersion.API_VERSION;
+
 @RestController
-@RequestMapping("/api/v1/customers")
+@RequestMapping(API_BASE_PATH + "/" + API_VERSION + "/customers")
 @RequiredArgsConstructor
 public class CustomerController {
 
