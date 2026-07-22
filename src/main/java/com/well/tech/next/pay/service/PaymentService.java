@@ -2,6 +2,7 @@ package com.well.tech.next.pay.service;
 
 import com.well.tech.next.pay.common.enums.PaymentStatus;
 import com.well.tech.next.pay.common.exceptions.resource.ResourceNotFoundException;
+import com.well.tech.next.pay.common.exceptions.validation.CustomerNotFoundException;
 import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentStatusTransitionException;
 import com.well.tech.next.pay.common.exceptions.validation.PaymentNotFoundException;
 import com.well.tech.next.pay.domain.PaymentStatusTransition;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -31,33 +33,35 @@ public class PaymentService {
     private final PaymentMapper paymentMapper;
 
     @Transactional
-    public PaymentResponse create(CreatePaymentRequest request) {
+    public PaymentResponse create(
+            String idempotencyKey,
+            CreatePaymentRequest request
+    ) {
+        Optional<Payment> existingPayment =
+                paymentRepository.findByIdempotencyKey(
+                        idempotencyKey
+                );
 
-        log.info(
-                "Creating payment for customer with id: {}",
-                request.customerId()
+        if (existingPayment.isPresent()) {
+            return paymentMapper.toResponse(
+                    existingPayment.get()
+            );
+        }
+
+        Customer customer = customerRepository
+                .findById(request.customerId())
+                .orElseThrow(() -> new CustomerNotFoundException(
+                        "Customer id not found: " + request.customerId()
+                ));
+
+        Payment payment = paymentMapper.toEntity(
+                request,
+                customer
         );
 
-        Customer customer = customerRepository.findById(request.customerId())
-                .orElseThrow(() -> {
-                    log.warn(
-                            "Customer not found with id: {}",
-                            request.customerId()
-                    );
-
-                    return new ResourceNotFoundException(
-                            "Customer not found"
-                    );
-                });
-
-        Payment payment = paymentMapper.toEntity(request, customer);
+        payment.setIdempotencyKey(idempotencyKey);
 
         Payment savedPayment = paymentRepository.save(payment);
-
-        log.info(
-                "Payment created successfully with id: {}",
-                savedPayment.getId()
-        );
 
         return paymentMapper.toResponse(savedPayment);
     }

@@ -1,6 +1,7 @@
 CREATE TABLE payment (
      id UUID PRIMARY KEY,
      customer_id UUID NOT NULL,
+     idempotency_key VARCHAR(255) NOT NULL,
      amount NUMERIC(19, 2) NOT NULL,
      currency VARCHAR(3) NOT NULL,
      status VARCHAR(20) NOT NULL,
@@ -8,6 +9,9 @@ CREATE TABLE payment (
      description VARCHAR(255),
      created_at TIMESTAMP NOT NULL,
      updated_at TIMESTAMP NOT NULL,
+
+     CONSTRAINT uk_payment_idempotency_key
+         UNIQUE (idempotency_key),
 
      CONSTRAINT fk_payment_customer
          FOREIGN KEY (customer_id)
