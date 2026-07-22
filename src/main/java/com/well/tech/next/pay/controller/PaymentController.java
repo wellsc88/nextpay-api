@@ -1,6 +1,7 @@
 package com.well.tech.next.pay.controller;
 
 import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
+import com.well.tech.next.pay.dto.request.payment.UpdatePaymentStatusRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
 import com.well.tech.next.pay.service.PaymentService;
@@ -56,5 +57,16 @@ public class PaymentController {
             @PathVariable UUID id
     ) {
         paymentService.delete(id);
+    }
+
+    @PatchMapping("/{id}/status")
+    public PaymentResponse updateStatus(
+            @PathVariable UUID id,
+            @RequestBody UpdatePaymentStatusRequest request
+    ) {
+        return paymentService.updateStatus(
+                id,
+                request.status()
+        );
     }
 }

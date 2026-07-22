@@ -1,6 +1,10 @@
 package com.well.tech.next.pay.service;
 
+import com.well.tech.next.pay.common.enums.PaymentStatus;
 import com.well.tech.next.pay.common.exceptions.resource.ResourceNotFoundException;
+import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentStatusTransitionException;
+import com.well.tech.next.pay.common.exceptions.validation.PaymentNotFoundException;
+import com.well.tech.next.pay.domain.PaymentStatusTransition;
 import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
@@ -135,6 +139,33 @@ public class PaymentService {
         log.info(
                 "Payment deleted successfully with id: {}",
                 id
+        );
+    }
+
+    @Transactional
+    public PaymentResponse updateStatus(
+            UUID paymentId,
+            PaymentStatus targetStatus
+    ) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new PaymentNotFoundException(paymentId));
+
+        PaymentStatus currentStatus = payment.getStatus();
+
+        if (!PaymentStatusTransition.isAllowed(
+                currentStatus,
+                targetStatus
+        )) {
+            throw new InvalidPaymentStatusTransitionException(
+                    currentStatus,
+                    targetStatus
+            );
+        }
+
+        payment.setStatus(targetStatus);
+
+        return paymentMapper.toResponse(
+                paymentRepository.save(payment)
         );
     }
 }
