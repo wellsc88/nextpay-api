@@ -2,7 +2,6 @@ package com.well.tech.next.pay.entity;
 
 import com.well.tech.next.pay.common.enums.PaymentMethod;
 import com.well.tech.next.pay.common.enums.PaymentStatus;
-import com.well.tech.next.pay.entity.Customer;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -32,6 +31,9 @@ public class Payment {
 
     @Column(nullable = false, length = 3)
     private String currency;
+
+    @Column(name = "idempotency_key", nullable = false, unique = true)
+    private String idempotencyKey;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
