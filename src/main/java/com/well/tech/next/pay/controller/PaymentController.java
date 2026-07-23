@@ -1,6 +1,7 @@
 package com.well.tech.next.pay.controller;
 
 import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
+import com.well.tech.next.pay.dto.request.payment.PaymentFilterRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentStatusRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
@@ -9,6 +10,8 @@ import com.well.tech.next.pay.service.PaymentService;
 import com.well.tech.next.pay.service.PaymentStatusHistoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,8 +52,14 @@ public class PaymentController {
     }
 
     @GetMapping
-    public List<PaymentResponse> findAll() {
-        return paymentService.findAll();
+    public Page<PaymentResponse> findAll(
+            PaymentFilterRequest filter,
+            Pageable pageable
+    ) {
+        return paymentService.findAll(
+                filter,
+                pageable
+        );
     }
 
     @PatchMapping("/{id}")

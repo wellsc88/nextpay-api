@@ -7,6 +7,7 @@ import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentStatusT
 import com.well.tech.next.pay.common.exceptions.validation.PaymentNotFoundException;
 import com.well.tech.next.pay.domain.PaymentStatusTransition;
 import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
+import com.well.tech.next.pay.dto.request.payment.PaymentFilterRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
 import com.well.tech.next.pay.entity.Customer;
@@ -14,8 +15,12 @@ import com.well.tech.next.pay.entity.Payment;
 import com.well.tech.next.pay.mapper.PaymentMapper;
 import com.well.tech.next.pay.repository.CustomerRepository;
 import com.well.tech.next.pay.repository.PaymentRepository;
+import com.well.tech.next.pay.repository.specification.PaymentSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -112,18 +117,16 @@ public class PaymentService {
     }
 
     @Transactional(readOnly = true)
-    public List<PaymentResponse> findAll() {
+    public Page<PaymentResponse> findAll(
+            PaymentFilterRequest filter,
+            Pageable pageable
+    ) {
+        Specification<Payment> specification =
+                PaymentSpecification.filter(filter);
 
-        log.info("Finding all payments");
-
-        List<PaymentResponse> payments = paymentRepository.findAll()
-                .stream()
-                .map(paymentMapper::toResponse)
-                .toList();
-
-        log.info("Found {} payments", payments.size());
-
-        return payments;
+        return paymentRepository
+                .findAll(specification, pageable)
+                .map(paymentMapper::toResponse);
     }
 
     @Transactional
