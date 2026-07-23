@@ -31,6 +31,7 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final CustomerRepository customerRepository;
     private final PaymentMapper paymentMapper;
+    private final PaymentStatusHistoryService paymentStatusHistoryService;
 
     @Transactional
     public PaymentResponse create(
@@ -152,9 +153,15 @@ public class PaymentService {
             PaymentStatus targetStatus
     ) {
         Payment payment = paymentRepository.findById(paymentId)
-                .orElseThrow(() -> new PaymentNotFoundException(paymentId));
+                .orElseThrow(() ->
+                        new PaymentNotFoundException(paymentId)
+                );
 
         PaymentStatus currentStatus = payment.getStatus();
+
+        if (currentStatus == targetStatus) {
+            return paymentMapper.toResponse(payment);
+        }
 
         if (!PaymentStatusTransition.isAllowed(
                 currentStatus,
@@ -167,6 +174,12 @@ public class PaymentService {
         }
 
         payment.setStatus(targetStatus);
+
+        paymentStatusHistoryService.record(
+                payment,
+                currentStatus,
+                targetStatus
+        );
 
         return paymentMapper.toResponse(
                 paymentRepository.save(payment)
