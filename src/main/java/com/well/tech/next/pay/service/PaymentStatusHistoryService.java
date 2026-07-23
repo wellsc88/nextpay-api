@@ -8,8 +8,9 @@ import com.well.tech.next.pay.entity.PaymentStatusHistory;
 import com.well.tech.next.pay.mapper.PaymentStatusHistoryMapper;
 import com.well.tech.next.pay.repository.PaymentRepository;
 import com.well.tech.next.pay.repository.PaymentStatusHistoryRepository;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PaymentStatusHistoryService {
 
     private final PaymentStatusHistoryRepository historyRepository;
@@ -29,6 +31,14 @@ public class PaymentStatusHistoryService {
             PaymentStatus fromStatus,
             PaymentStatus toStatus
     ) {
+
+        log.info(
+                "Recording payment status transition. paymentId={}, fromStatus={}, toStatus={}",
+                payment.getId(),
+                fromStatus,
+                toStatus
+        );
+
         PaymentStatusHistory history =
                 PaymentStatusHistory.builder()
                         .payment(payment)
@@ -38,20 +48,49 @@ public class PaymentStatusHistoryService {
                         .build();
 
         historyRepository.save(history);
+
+        log.info(
+                "Payment status transition recorded successfully. paymentId={}, fromStatus={}, toStatus={}",
+                payment.getId(),
+                fromStatus,
+                toStatus
+        );
     }
 
     @Transactional(readOnly = true)
     public List<PaymentStatusHistoryResponse> findByPaymentId(
             UUID paymentId
     ) {
-        paymentRepository.findById(paymentId)
-                .orElseThrow(() ->
-                        new PaymentNotFoundException(paymentId)
-                );
 
-        return historyRepository
-                .findByPaymentIdOrderByCreatedAtAsc(paymentId)
-                .stream()
-                .map(paymentStatusHistoryMapper::toResponse)
-                .toList();
-    }}
+        log.debug(
+                "Fetching payment status history. paymentId={}",
+                paymentId
+        );
+
+        paymentRepository.findById(paymentId)
+                .orElseThrow(() -> {
+
+                    log.warn(
+                            "Cannot fetch payment status history. Payment not found. paymentId={}",
+                            paymentId
+                    );
+
+                    return new PaymentNotFoundException(paymentId);
+                });
+
+        List<PaymentStatusHistoryResponse> history =
+                historyRepository
+                        .findByPaymentIdOrderByCreatedAtAsc(paymentId)
+                        .stream()
+                        .map(paymentStatusHistoryMapper::toResponse)
+                        .toList();
+
+        log.debug(
+                "Payment status history fetched successfully. paymentId={}, entries={}",
+                paymentId,
+                history.size()
+        );
+
+        return history;
+    }
+}
