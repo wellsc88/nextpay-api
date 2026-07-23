@@ -1,11 +1,14 @@
 package com.well.tech.next.pay.controller;
 
 import com.well.tech.next.pay.dto.request.customer.CreateCustomerRequest;
+import com.well.tech.next.pay.dto.request.customer.CustomerFilterRequest;
 import com.well.tech.next.pay.dto.response.customer.CustomerResponse;
 import com.well.tech.next.pay.dto.request.customer.UpdateCustomerRequest;
 import com.well.tech.next.pay.service.CustomerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -30,16 +33,15 @@ public class CustomerController {
         return customerService.create(request);
     }
 
-    @GetMapping("/{id}")
-    public CustomerResponse findById(
-            @PathVariable UUID id
-    ) {
-        return customerService.findById(id);
-    }
-
     @GetMapping
-    public List<CustomerResponse> findAll() {
-        return customerService.findAll();
+    public Page<CustomerResponse> findAll(
+            @ModelAttribute CustomerFilterRequest filter,
+            Pageable pageable
+    ) {
+        return customerService.findAll(
+                filter,
+                pageable
+        );
     }
 
     @PatchMapping("/{id}")
