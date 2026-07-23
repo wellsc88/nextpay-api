@@ -4,7 +4,9 @@ import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentStatusRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
+import com.well.tech.next.pay.dto.response.payment.PaymentStatusHistoryResponse;
 import com.well.tech.next.pay.service.PaymentService;
+import com.well.tech.next.pay.service.PaymentStatusHistoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,6 +24,7 @@ import static com.well.tech.next.pay.config.ApiVersion.API_VERSION;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final PaymentStatusHistoryService paymentStatusHistoryService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -68,5 +71,13 @@ public class PaymentController {
                 id,
                 request.status()
         );
+    }
+
+    @GetMapping("/{paymentId}/status-history")
+    public List<PaymentStatusHistoryResponse> getStatusHistory(
+            @PathVariable UUID paymentId
+    ) {
+        return paymentStatusHistoryService
+                .findByPaymentId(paymentId);
     }
 }
