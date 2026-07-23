@@ -2,13 +2,18 @@ package com.well.tech.next.pay.service;
 
 import com.well.tech.next.pay.common.exceptions.resource.ResourceNotFoundException;
 import com.well.tech.next.pay.dto.request.customer.CreateCustomerRequest;
+import com.well.tech.next.pay.dto.request.customer.CustomerFilterRequest;
 import com.well.tech.next.pay.dto.request.customer.UpdateCustomerRequest;
 import com.well.tech.next.pay.dto.response.customer.CustomerResponse;
 import com.well.tech.next.pay.entity.Customer;
 import com.well.tech.next.pay.mapper.CustomerMapper;
 import com.well.tech.next.pay.repository.CustomerRepository;
+import com.well.tech.next.pay.repository.specification.CustomerSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,17 +43,16 @@ public class CustomerService {
     }
 
     @Transactional(readOnly = true)
-    public CustomerResponse findById(UUID id) {
+    public Page<CustomerResponse> findAll(
+            CustomerFilterRequest filter,
+            Pageable pageable
+    ) {
+        Specification<Customer> specification =
+                CustomerSpecification.filter(filter);
 
-        log.info("Finding customer by id: {}", id);
-
-        Customer customer = customerRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.warn("Customer not found with id: {}", id);
-                    return new ResourceNotFoundException("Customer not found");
-                });
-
-        return customerMapper.toResponse(customer);
+        return customerRepository
+                .findAll(specification, pageable)
+                .map(customerMapper::toResponse);
     }
 
     @Transactional(readOnly = true)
