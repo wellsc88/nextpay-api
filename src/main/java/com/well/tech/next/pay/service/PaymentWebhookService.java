@@ -1,5 +1,6 @@
 package com.well.tech.next.pay.service;
 
+import com.well.tech.next.pay.common.enums.PaymentStatus;
 import com.well.tech.next.pay.common.exceptions.validation.PaymentNotFoundException;
 import com.well.tech.next.pay.dto.request.payment.PaymentWebhookRequest;
 import com.well.tech.next.pay.entity.Payment;
@@ -18,6 +19,7 @@ public class PaymentWebhookService {
 
     private final PaymentRepository paymentRepository;
     private final WebhookEventRepository webhookEventRepository;
+    private final PaymentStatusTransitionService paymentStatusTransitionService;
 
     @Transactional
     public void process(PaymentWebhookRequest request) {
@@ -52,23 +54,32 @@ public class PaymentWebhookService {
                     );
                 });
 
-        payment.setStatus(request.status());
+        PaymentStatus currentStatus = payment.getStatus();
+        PaymentStatus newStatus = request.status();
+
+        paymentStatusTransitionService.validate(
+                currentStatus,
+                newStatus
+        );
+
+        payment.setStatus(newStatus);
 
         paymentRepository.save(payment);
 
         WebhookEvent webhookEvent = WebhookEvent.builder()
                 .eventId(request.eventId())
                 .paymentId(request.paymentId())
-                .status(request.status())
+                .status(newStatus)
                 .build();
 
         webhookEventRepository.save(webhookEvent);
 
         log.info(
-                "Payment webhook processed successfully. eventId={}, paymentId={}, status={}",
+                "Payment webhook processed successfully. eventId={}, paymentId={}, fromStatus={}, toStatus={}",
                 request.eventId(),
                 request.paymentId(),
-                request.status()
+                currentStatus,
+                newStatus
         );
     }
 }
