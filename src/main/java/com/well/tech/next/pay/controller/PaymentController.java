@@ -104,4 +104,12 @@ public class PaymentController {
     ) {
         paymentService.cancel(paymentId);
     }
+
+    @PostMapping("/{paymentId}/refund")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void refund(
+            @PathVariable UUID paymentId
+    ) {
+        paymentService.refund(paymentId);
+    }
 }

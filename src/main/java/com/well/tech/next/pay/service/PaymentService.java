@@ -232,4 +232,48 @@ public class PaymentService {
                 newStatus
         );
     }
+
+    @Transactional
+    public void refund(UUID paymentId) {
+
+        log.info(
+                "Refunding payment. paymentId={}",
+                paymentId
+        );
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> {
+                    log.warn(
+                            "Payment not found for refund. paymentId={}",
+                            paymentId
+                    );
+
+                    return new PaymentNotFoundException(paymentId);
+                });
+
+        PaymentStatus currentStatus = payment.getStatus();
+        PaymentStatus newStatus = PaymentStatus.REFUNDED;
+
+        paymentStatusTransitionService.validate(
+                currentStatus,
+                newStatus
+        );
+
+        paymentStatusHistoryService.record(
+                payment,
+                currentStatus,
+                newStatus
+        );
+
+        payment.setStatus(newStatus);
+
+        paymentRepository.save(payment);
+
+        log.info(
+                "Payment refunded successfully. paymentId={}, fromStatus={}, toStatus={}",
+                paymentId,
+                currentStatus,
+                newStatus
+        );
+    }
 }
