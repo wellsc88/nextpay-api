@@ -96,4 +96,12 @@ public class PaymentController {
         return paymentStatusHistoryService
                 .findByPaymentId(paymentId);
     }
+
+    @PostMapping("/{paymentId}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancel(
+            @PathVariable UUID paymentId
+    ) {
+        paymentService.cancel(paymentId);
+    }
 }

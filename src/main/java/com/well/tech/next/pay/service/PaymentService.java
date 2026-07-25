@@ -24,7 +24,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,6 +36,7 @@ public class PaymentService {
     private final CustomerRepository customerRepository;
     private final PaymentMapper paymentMapper;
     private final PaymentStatusHistoryService paymentStatusHistoryService;
+    private final PaymentStatusTransitionService paymentStatusTransitionService;
 
     @Transactional
     public PaymentResponse create(
@@ -186,6 +186,50 @@ public class PaymentService {
 
         return paymentMapper.toResponse(
                 paymentRepository.save(payment)
+        );
+    }
+
+    @Transactional
+    public void cancel(UUID paymentId) {
+
+        log.info(
+                "Cancelling payment. paymentId={}",
+                paymentId
+        );
+
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> {
+                    log.warn(
+                            "Payment not found for cancellation. paymentId={}",
+                            paymentId
+                    );
+
+                    return new PaymentNotFoundException(paymentId);
+                });
+
+        PaymentStatus currentStatus = payment.getStatus();
+        PaymentStatus newStatus = PaymentStatus.CANCELLED;
+
+        paymentStatusTransitionService.validate(
+                currentStatus,
+                newStatus
+        );
+
+        paymentStatusHistoryService.record(
+                payment,
+                currentStatus,
+                newStatus
+        );
+
+        payment.setStatus(newStatus);
+
+        paymentRepository.save(payment);
+
+        log.info(
+                "Payment cancelled successfully. paymentId={}, fromStatus={}, toStatus={}",
+                paymentId,
+                currentStatus,
+                newStatus
         );
     }
 }
