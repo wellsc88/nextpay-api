@@ -37,7 +37,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 ApiVersion.API_BASE_PATH + "/" +  ApiVersion.API_VERSION + "/auth/**",
-                                ApiVersion.API_BASE_PATH + "/" +  ApiVersion.API_VERSION + "/users"
+                                ApiVersion.API_BASE_PATH + "/" +  ApiVersion.API_VERSION + "/users",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
                                 ).permitAll()
                         .requestMatchers(
                                 ApiVersion.API_BASE_PATH + "/" +  ApiVersion.API_VERSION + "/admin/**"
