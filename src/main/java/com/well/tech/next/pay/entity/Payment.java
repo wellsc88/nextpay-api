@@ -44,6 +44,10 @@ public class Payment {
     @Column(name = "payment_method", nullable = false, length = 20)
     private PaymentMethod paymentMethod;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_payment_id")
+    private Payment parentPayment;
+
     @Column(length = 255)
     private String description;
 
