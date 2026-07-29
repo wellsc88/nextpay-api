@@ -3,6 +3,7 @@ package com.well.tech.next.pay.service;
 import com.well.tech.next.pay.common.enums.PaymentStatus;
 import com.well.tech.next.pay.common.exceptions.resource.ResourceNotFoundException;
 import com.well.tech.next.pay.common.exceptions.validation.CustomerNotFoundException;
+import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentRetryException;
 import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentStatusTransitionException;
 import com.well.tech.next.pay.common.exceptions.validation.PaymentNotFoundException;
 import com.well.tech.next.pay.domain.PaymentStatusTransition;
@@ -24,6 +25,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -275,5 +277,46 @@ public class PaymentService {
                 currentStatus,
                 newStatus
         );
+    }
+
+    @Transactional
+    public PaymentResponse retry(UUID paymentId) {
+
+        log.info(
+                "Retrying payment. paymentId={}",
+                paymentId
+        );
+
+        Payment originalPayment = paymentRepository.findById(paymentId)
+                .orElseThrow(() ->
+                        new PaymentNotFoundException(paymentId)
+                );
+
+        if (originalPayment.getStatus() != PaymentStatus.DECLINED) {
+            throw new InvalidPaymentRetryException(
+                    originalPayment.getStatus().toString()
+            );
+        }
+
+        Payment retryPayment = Payment.builder()
+                .customer(originalPayment.getCustomer())
+                .parentPayment(originalPayment)
+                .idempotencyKey(UUID.randomUUID().toString())
+                .amount(originalPayment.getAmount())
+                .currency(originalPayment.getCurrency())
+                .status(PaymentStatus.PENDING)
+                .paymentMethod(originalPayment.getPaymentMethod())
+                .description(originalPayment.getDescription())
+                .build();
+
+        Payment savedPayment = paymentRepository.save(retryPayment);
+
+        log.info(
+                "Payment retry created successfully. originalPaymentId={}, retryPaymentId={}",
+                originalPayment.getId(),
+                savedPayment.getId()
+        );
+
+        return paymentMapper.toResponse(savedPayment);
     }
 }

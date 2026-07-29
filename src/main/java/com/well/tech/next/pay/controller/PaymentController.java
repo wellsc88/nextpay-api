@@ -112,4 +112,12 @@ public class PaymentController {
     ) {
         paymentService.refund(paymentId);
     }
+
+    @PostMapping("/{paymentId}/retry")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PaymentResponse retry(
+            @PathVariable UUID paymentId
+    ) {
+        return paymentService.retry(paymentId);
+    }
 }

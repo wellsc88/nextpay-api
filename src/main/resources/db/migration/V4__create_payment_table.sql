@@ -1,6 +1,7 @@
 CREATE TABLE payment (
      id UUID PRIMARY KEY,
      customer_id UUID NOT NULL,
+     parent_payment_id UUID,
      idempotency_key VARCHAR(255) NOT NULL,
      amount NUMERIC(19, 2) NOT NULL,
      currency VARCHAR(3) NOT NULL,
@@ -16,4 +17,8 @@ CREATE TABLE payment (
      CONSTRAINT fk_payment_customer
          FOREIGN KEY (customer_id)
              REFERENCES customer(id)
+
+     CONSTRAINT fk_payment_parent
+         FOREIGN KEY (parent_payment_id)
+             REFERENCES payment(id)
 );
