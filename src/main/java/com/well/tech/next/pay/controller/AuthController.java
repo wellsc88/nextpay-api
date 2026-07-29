@@ -6,6 +6,10 @@ import com.well.tech.next.pay.dto.request.token.RefreshTokenRequest;
 import com.well.tech.next.pay.dto.response.login.LoginResponse;
 import com.well.tech.next.pay.dto.response.token.RefreshTokenResponse;
 import com.well.tech.next.pay.service.AuthService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,19 +21,62 @@ import static com.well.tech.next.pay.config.ApiVersion.API_VERSION;
 @RestController
 @RequestMapping(API_BASE_PATH + "/" + API_VERSION + "/auth")
 @RequiredArgsConstructor
+@Tag(
+        name = "Authentication",
+        description = "Endpoints for user authentication, token refresh and logout"
+)
 public class AuthController {
 
     private final AuthService service;
 
+
+    @Operation(
+            summary = "User login",
+            description = "Authenticates a user and returns access and refresh tokens"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Login successful"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid login request"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Invalid credentials"
+            )
+    })
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
-            @Valid @RequestBody LoginRequest request) {
+            @Valid @RequestBody LoginRequest request
+    ) {
 
         return ResponseEntity.ok(
                 service.login(request)
         );
     }
 
+
+    @Operation(
+            summary = "Refresh access token",
+            description = "Generates a new access token using a valid refresh token"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Token refreshed successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid refresh token request"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Refresh token expired or invalid"
+            )
+    })
     @PostMapping("/refresh")
     public ResponseEntity<RefreshTokenResponse> refresh(
             @RequestBody RefreshTokenRequest request
@@ -40,9 +87,25 @@ public class AuthController {
         );
     }
 
+
+    @Operation(
+            summary = "Logout user",
+            description = "Invalidates the refresh token and terminates the user session"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Logout successful"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid logout request"
+            )
+    })
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(
-            @RequestBody LogoutRequest request) {
+            @RequestBody LogoutRequest request
+    ) {
 
         service.logout(request.refreshToken());
 

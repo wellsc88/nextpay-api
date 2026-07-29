@@ -29,6 +29,7 @@
     <properties>
         <java.version>21</java.version>
         <jsonwebtoken.version>0.12.6</jsonwebtoken.version>
+        <swagger.version>2.8.13</swagger.version>
     </properties>
     <dependencies>
 
@@ -125,6 +126,13 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jsonwebtoken.version}</version>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Swagger -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${swagger.version}</version>
         </dependency>
     </dependencies>
 

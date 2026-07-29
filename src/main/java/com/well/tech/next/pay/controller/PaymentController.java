@@ -2,14 +2,21 @@ package com.well.tech.next.pay.controller;
 
 import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.PaymentFilterRequest;
+import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentStatusRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
-import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentStatusHistoryResponse;
 import com.well.tech.next.pay.service.PaymentService;
 import com.well.tech.next.pay.service.PaymentStatusHistoryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -24,17 +31,47 @@ import static com.well.tech.next.pay.config.ApiVersion.API_VERSION;
 @RestController
 @RequestMapping(API_BASE_PATH + "/" + API_VERSION + "/payments")
 @RequiredArgsConstructor
+@Tag(
+        name = "Payments",
+        description = "Payment processing and management endpoints"
+)
 public class PaymentController {
 
     private final PaymentService paymentService;
     private final PaymentStatusHistoryService paymentStatusHistoryService;
 
+
+    @Operation(
+            summary = "Create payment",
+            description = "Creates a new payment using idempotency protection"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Payment created successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid payment data"
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Duplicate idempotency key"
+            )
+    })
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PaymentResponse create(
+            @Parameter(
+                    description = "Unique key to guarantee payment idempotency",
+                    required = true,
+                    example = "payment-123456",
+                    in = ParameterIn.HEADER
+            )
             @RequestHeader("Idempotency-Key")
             String idempotencyKey,
 
+            @Valid
             @RequestBody
             CreatePaymentRequest request
     ) {
@@ -44,6 +81,21 @@ public class PaymentController {
         );
     }
 
+
+    @Operation(
+            summary = "Find payment by id",
+            description = "Returns payment details by UUID"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment found successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Payment not found"
+            )
+    })
     @GetMapping("/{id}")
     public PaymentResponse findById(
             @PathVariable UUID id
@@ -51,9 +103,23 @@ public class PaymentController {
         return paymentService.findById(id);
     }
 
+
+    @Operation(
+            summary = "List payments",
+            description = "Returns payments using filters and pagination"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payments retrieved successfully"
+            )
+    })
     @GetMapping
     public Page<PaymentResponse> findAll(
+            @ParameterObject
             PaymentFilterRequest filter,
+
+            @ParameterObject
             Pageable pageable
     ) {
         return paymentService.findAll(
@@ -62,14 +128,46 @@ public class PaymentController {
         );
     }
 
+
+    @Operation(
+            summary = "Update payment",
+            description = "Updates payment information"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Payment not found"
+            )
+    })
     @PatchMapping("/{id}")
     public PaymentResponse patch(
             @PathVariable UUID id,
-            @Valid @RequestBody UpdatePaymentRequest request
+
+            @Valid
+            @RequestBody UpdatePaymentRequest request
     ) {
         return paymentService.update(id, request);
     }
 
+
+    @Operation(
+            summary = "Delete payment",
+            description = "Deletes a payment by UUID"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Payment deleted successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Payment not found"
+            )
+    })
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(
@@ -78,9 +176,30 @@ public class PaymentController {
         paymentService.delete(id);
     }
 
+
+    @Operation(
+            summary = "Update payment status",
+            description = "Changes payment status following allowed transitions"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment status updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid status transition"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Payment not found"
+            )
+    })
     @PatchMapping("/{id}/status")
     public PaymentResponse updateStatus(
             @PathVariable UUID id,
+
+            @Valid
             @RequestBody UpdatePaymentStatusRequest request
     ) {
         return paymentService.updateStatus(
@@ -89,6 +208,21 @@ public class PaymentController {
         );
     }
 
+
+    @Operation(
+            summary = "Get payment status history",
+            description = "Returns all status changes performed on a payment"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Status history retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Payment not found"
+            )
+    })
     @GetMapping("/{paymentId}/status-history")
     public List<PaymentStatusHistoryResponse> getStatusHistory(
             @PathVariable UUID paymentId
@@ -97,6 +231,21 @@ public class PaymentController {
                 .findByPaymentId(paymentId);
     }
 
+
+    @Operation(
+            summary = "Cancel payment",
+            description = "Cancels a payment"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Payment cancelled successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Payment cannot be cancelled"
+            )
+    })
     @PostMapping("/{paymentId}/cancel")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void cancel(
@@ -105,6 +254,21 @@ public class PaymentController {
         paymentService.cancel(paymentId);
     }
 
+
+    @Operation(
+            summary = "Refund payment",
+            description = "Refunds an approved payment"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Payment refunded successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Payment cannot be refunded"
+            )
+    })
     @PostMapping("/{paymentId}/refund")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void refund(
@@ -113,6 +277,21 @@ public class PaymentController {
         paymentService.refund(paymentId);
     }
 
+
+    @Operation(
+            summary = "Retry payment",
+            description = "Creates a retry attempt for a failed payment"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "201",
+                    description = "Retry payment created successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Payment cannot be retried"
+            )
+    })
     @PostMapping("/{paymentId}/retry")
     @ResponseStatus(HttpStatus.CREATED)
     public PaymentResponse retry(
