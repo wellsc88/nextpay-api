@@ -14,5 +14,7 @@ public enum PaymentEventType {
 
     PAYMENT_RETRY_CREATED,
 
+    PAYMENT_EXPIRED,
+
     WEBHOOK_PROCESSED
 }

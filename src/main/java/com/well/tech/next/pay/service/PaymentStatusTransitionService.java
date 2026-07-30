@@ -19,7 +19,8 @@ public class PaymentStatusTransitionService {
 
             case PENDING ->
                     newStatus == PaymentStatus.PROCESSING
-                            || newStatus == PaymentStatus.CANCELLED;
+                            || newStatus == PaymentStatus.CANCELLED
+                            || newStatus == PaymentStatus.EXPIRED;
 
             case PROCESSING ->
                     newStatus == PaymentStatus.APPROVED
@@ -31,7 +32,8 @@ public class PaymentStatusTransitionService {
 
             case DECLINED,
                  CANCELLED,
-                 REFUNDED ->
+                 REFUNDED,
+                 EXPIRED ->
                     false;
         };
 

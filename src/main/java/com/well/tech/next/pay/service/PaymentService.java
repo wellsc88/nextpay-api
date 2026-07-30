@@ -6,6 +6,7 @@ import com.well.tech.next.pay.common.exceptions.resource.ResourceNotFoundExcepti
 import com.well.tech.next.pay.common.exceptions.validation.CustomerNotFoundException;
 import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentRetryException;
 import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentStatusTransitionException;
+import com.well.tech.next.pay.common.exceptions.validation.PaymentExpiredException;
 import com.well.tech.next.pay.domain.PaymentStatusTransition;
 import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.PaymentFilterRequest;
@@ -25,10 +26,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @Slf4j
 @Service
@@ -48,13 +48,17 @@ public class PaymentService {
             CreatePaymentRequest request
     ) {
 
+        log.info(
+                "Creating payment. customerId={}, idempotencyKey={}",
+                request.customerId(),
+                idempotencyKey
+        );
+
         Optional<Payment> existingPayment =
                 paymentRepository.findByIdempotencyKey(idempotencyKey);
 
         if (existingPayment.isPresent()) {
-            return paymentMapper.toResponse(
-                    existingPayment.get()
-            );
+            return paymentMapper.toResponse(existingPayment.get());
         }
 
         Customer customer = customerRepository
@@ -70,6 +74,10 @@ public class PaymentService {
                 customer
         );
 
+        payment.setExpiresAt(
+                LocalDateTime.now().plusMinutes(30)
+        );
+
         payment.setIdempotencyKey(idempotencyKey);
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -80,11 +88,13 @@ public class PaymentService {
                 "Payment created successfully"
         );
 
-        log.info("Payment created successfully. paymentId={}", id);
+        log.info(
+                "Payment created successfully. paymentId={}",
+                savedPayment.getId()
+        );
 
         return paymentMapper.toResponse(savedPayment);
     }
-
 
     @Transactional
     public PaymentResponse update(
@@ -159,6 +169,8 @@ public class PaymentService {
 
         Payment payment = findEntity(paymentId);
 
+        validateExpiration(payment);
+
         PaymentStatus currentStatus = payment.getStatus();
 
         if (currentStatus == targetStatus) {
@@ -219,6 +231,8 @@ public class PaymentService {
         log.info("Cancelling payment. paymentId={}", paymentId);
 
         Payment payment = findEntity(paymentId);
+
+        validateExpiration(payment);
 
         PaymentStatus currentStatus = payment.getStatus();
         PaymentStatus newStatus = PaymentStatus.CANCELLED;
@@ -340,5 +354,72 @@ public class PaymentService {
                                 "Payment not found"
                         )
                 );
+    }
+
+    @Transactional
+    public void expire(UUID paymentId) {
+
+        log.info("Expiring payment. paymentId={}", paymentId);
+
+        Payment payment = findEntity(paymentId);
+
+        PaymentStatus currentStatus = payment.getStatus();
+        PaymentStatus newStatus = PaymentStatus.EXPIRED;
+
+        paymentStatusTransitionService.validate(
+                currentStatus,
+                newStatus
+        );
+
+        payment.setStatus(newStatus);
+
+        Payment updatedPayment = paymentRepository.save(payment);
+
+        paymentStatusHistoryService.record(
+                updatedPayment,
+                currentStatus,
+                newStatus
+        );
+
+        paymentEventService.record(
+                updatedPayment,
+                PaymentEventType.PAYMENT_EXPIRED,
+                "Payment expired successfully"
+        );
+
+        log.info(
+                "Payment expired successfully. paymentId={}, fromStatus={}, toStatus={}",
+                paymentId,
+                currentStatus,
+                newStatus
+        );
+    }
+
+    private void validateExpiration(Payment payment) {
+
+        if (payment.getStatus() == PaymentStatus.PENDING
+                && payment.getExpiresAt() != null
+                && payment.getExpiresAt().isBefore(LocalDateTime.now())) {
+
+            payment.setStatus(PaymentStatus.EXPIRED);
+
+            paymentRepository.save(payment);
+
+            paymentStatusHistoryService.record(
+                    payment,
+                    PaymentStatus.PENDING,
+                    PaymentStatus.EXPIRED
+            );
+
+            paymentEventService.record(
+                    payment,
+                    PaymentEventType.PAYMENT_EXPIRED,
+                    "Payment expired automatically"
+            );
+
+            throw new PaymentExpiredException(
+                    "Payment has expired"
+            );
+        }
     }
 }

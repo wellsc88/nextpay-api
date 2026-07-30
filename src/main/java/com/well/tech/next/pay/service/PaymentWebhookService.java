@@ -2,6 +2,7 @@ package com.well.tech.next.pay.service;
 
 import com.well.tech.next.pay.common.enums.PaymentEventType;
 import com.well.tech.next.pay.common.enums.PaymentStatus;
+import com.well.tech.next.pay.common.exceptions.validation.PaymentExpiredException;
 import com.well.tech.next.pay.common.exceptions.validation.PaymentNotFoundException;
 import com.well.tech.next.pay.dto.request.payment.PaymentWebhookRequest;
 import com.well.tech.next.pay.entity.Payment;
@@ -12,6 +13,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -52,10 +55,10 @@ public class PaymentWebhookService {
                             request.paymentId()
                     );
 
-                    return new PaymentNotFoundException(
-                            request.paymentId()
-                    );
+                    return new PaymentNotFoundException(request.paymentId());
                 });
+
+        validateExpiration(payment);
 
         PaymentStatus currentStatus = payment.getStatus();
         PaymentStatus newStatus = request.status();
@@ -85,13 +88,13 @@ public class PaymentWebhookService {
                 )
         );
 
-        WebhookEvent webhookEvent = WebhookEvent.builder()
-                .eventId(request.eventId())
-                .paymentId(request.paymentId())
-                .status(newStatus)
-                .build();
-
-        webhookEventRepository.save(webhookEvent);
+        webhookEventRepository.save(
+                WebhookEvent.builder()
+                        .eventId(request.eventId())
+                        .paymentId(request.paymentId())
+                        .status(newStatus)
+                        .build()
+        );
 
         log.info(
                 "Payment webhook processed successfully. eventId={}, paymentId={}, fromStatus={}, toStatus={}",
@@ -100,5 +103,23 @@ public class PaymentWebhookService {
                 currentStatus,
                 newStatus
         );
+    }
+
+    private void validateExpiration(Payment payment) {
+
+        if (payment.getStatus() == PaymentStatus.PENDING
+                && payment.getExpiresAt() != null
+                && payment.getExpiresAt().isBefore(LocalDateTime.now())) {
+
+            log.warn(
+                    "Expired payment cannot be processed by webhook. paymentId={}, expiresAt={}",
+                    payment.getId(),
+                    payment.getExpiresAt()
+            );
+
+            throw new PaymentExpiredException(
+                    "Payment has expired"
+            );
+        }
     }
 }

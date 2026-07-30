@@ -334,4 +334,35 @@ public class PaymentController {
 
         return paymentEventService.findByPaymentId(paymentId);
     }
+
+    @Operation(
+            summary = "Expire payment",
+            description = "Marks a pending payment as expired."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Payment expired successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Payment not found"
+            ),
+            @ApiResponse(
+                    responseCode = "422",
+                    description = "Invalid payment status transition"
+            )
+    })
+    @PostMapping("/{paymentId}/expire")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void expire(
+            @Parameter(
+                    description = "Payment unique identifier",
+                    example = "550e8400-e29b-41d4-a716-446655440000",
+                    required = true
+            )
+            @PathVariable UUID paymentId
+    ) {
+        paymentService.expire(paymentId);
+    }
 }
