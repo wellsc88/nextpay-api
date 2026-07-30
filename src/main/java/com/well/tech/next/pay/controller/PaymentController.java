@@ -5,14 +5,8 @@ import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.PaymentFilterRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentStatusRequest;
-import com.well.tech.next.pay.dto.response.payment.PaymentEventResponse;
-import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
-import com.well.tech.next.pay.dto.response.payment.PaymentStatusHistoryResponse;
-import com.well.tech.next.pay.dto.response.payment.PaymentTimelineResponse;
-import com.well.tech.next.pay.service.PaymentEventService;
-import com.well.tech.next.pay.service.PaymentService;
-import com.well.tech.next.pay.service.PaymentStatusHistoryService;
-import com.well.tech.next.pay.service.PaymentTimelineService;
+import com.well.tech.next.pay.dto.response.payment.*;
+import com.well.tech.next.pay.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -48,6 +42,7 @@ public class PaymentController {
     private final PaymentStatusHistoryService paymentStatusHistoryService;
     private final PaymentEventService paymentEventService;
     private final PaymentTimelineService paymentTimelineService;
+    private final PaymentStatisticsService paymentStatisticsService;
 
     @Operation(
             summary = "Create payment",
@@ -407,5 +402,20 @@ public class PaymentController {
             @PathVariable UUID paymentId
     ) {
         return paymentTimelineService.findTimeline(paymentId);
+    }
+
+    @GetMapping("/statistics")
+    @Operation(
+            summary = "Get payment statistics",
+            description = "Retrieves aggregated payment statistics"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment statistics retrieved successfully"
+            )
+    })
+    public PaymentStatisticsResponse getStatistics() {
+        return paymentStatisticsService.getStatistics();
     }
 }
