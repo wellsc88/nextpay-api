@@ -6,6 +6,7 @@ import com.well.tech.next.pay.common.exceptions.resource.ResourceNotFoundExcepti
 import com.well.tech.next.pay.common.exceptions.validation.CustomerNotFoundException;
 import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentRetryException;
 import com.well.tech.next.pay.common.exceptions.validation.InvalidPaymentStatusTransitionException;
+import com.well.tech.next.pay.common.exceptions.validation.PaymentExpiredException;
 import com.well.tech.next.pay.domain.PaymentStatusTransition;
 import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.PaymentFilterRequest;
@@ -168,6 +169,8 @@ public class PaymentService {
 
         Payment payment = findEntity(paymentId);
 
+        validateExpiration(payment);
+
         PaymentStatus currentStatus = payment.getStatus();
 
         if (currentStatus == targetStatus) {
@@ -228,6 +231,8 @@ public class PaymentService {
         log.info("Cancelling payment. paymentId={}", paymentId);
 
         Payment payment = findEntity(paymentId);
+
+        validateExpiration(payment);
 
         PaymentStatus currentStatus = payment.getStatus();
         PaymentStatus newStatus = PaymentStatus.CANCELLED;
@@ -388,5 +393,33 @@ public class PaymentService {
                 currentStatus,
                 newStatus
         );
+    }
+
+    private void validateExpiration(Payment payment) {
+
+        if (payment.getStatus() == PaymentStatus.PENDING
+                && payment.getExpiresAt() != null
+                && payment.getExpiresAt().isBefore(LocalDateTime.now())) {
+
+            payment.setStatus(PaymentStatus.EXPIRED);
+
+            paymentRepository.save(payment);
+
+            paymentStatusHistoryService.record(
+                    payment,
+                    PaymentStatus.PENDING,
+                    PaymentStatus.EXPIRED
+            );
+
+            paymentEventService.record(
+                    payment,
+                    PaymentEventType.PAYMENT_EXPIRED,
+                    "Payment expired automatically"
+            );
+
+            throw new PaymentExpiredException(
+                    "Payment has expired"
+            );
+        }
     }
 }
