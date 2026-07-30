@@ -10,6 +10,7 @@ CREATE TABLE payment (
      description VARCHAR(255),
      created_at TIMESTAMP NOT NULL,
      updated_at TIMESTAMP NOT NULL,
+     expires_at TIMESTAMP,
 
      CONSTRAINT uk_payment_idempotency_key
          UNIQUE (idempotency_key),

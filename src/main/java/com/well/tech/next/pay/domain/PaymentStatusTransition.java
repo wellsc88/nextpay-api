@@ -13,7 +13,8 @@ public final class PaymentStatusTransition {
         return switch (current) {
             case PENDING ->
                     target == PaymentStatus.PROCESSING
-                            || target == PaymentStatus.CANCELLED;
+                            || target == PaymentStatus.CANCELLED
+                            || target == PaymentStatus.EXPIRED;
 
             case PROCESSING ->
                     target == PaymentStatus.APPROVED
@@ -22,7 +23,7 @@ public final class PaymentStatusTransition {
             case APPROVED ->
                     target == PaymentStatus.REFUNDED;
 
-            case DECLINED, CANCELLED, REFUNDED ->
+            case DECLINED, CANCELLED, REFUNDED, EXPIRED ->
                     false;
         };
     }

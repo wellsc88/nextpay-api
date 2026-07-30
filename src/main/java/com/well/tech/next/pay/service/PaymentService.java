@@ -25,10 +25,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
-
-import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 @Slf4j
 @Service
@@ -48,13 +47,17 @@ public class PaymentService {
             CreatePaymentRequest request
     ) {
 
+        log.info(
+                "Creating payment. customerId={}, idempotencyKey={}",
+                request.customerId(),
+                idempotencyKey
+        );
+
         Optional<Payment> existingPayment =
                 paymentRepository.findByIdempotencyKey(idempotencyKey);
 
         if (existingPayment.isPresent()) {
-            return paymentMapper.toResponse(
-                    existingPayment.get()
-            );
+            return paymentMapper.toResponse(existingPayment.get());
         }
 
         Customer customer = customerRepository
@@ -70,6 +73,10 @@ public class PaymentService {
                 customer
         );
 
+        payment.setExpiresAt(
+                LocalDateTime.now().plusMinutes(30)
+        );
+
         payment.setIdempotencyKey(idempotencyKey);
 
         Payment savedPayment = paymentRepository.save(payment);
@@ -80,11 +87,13 @@ public class PaymentService {
                 "Payment created successfully"
         );
 
-        log.info("Payment created successfully. paymentId={}", id);
+        log.info(
+                "Payment created successfully. paymentId={}",
+                savedPayment.getId()
+        );
 
         return paymentMapper.toResponse(savedPayment);
     }
-
 
     @Transactional
     public PaymentResponse update(
@@ -340,5 +349,44 @@ public class PaymentService {
                                 "Payment not found"
                         )
                 );
+    }
+
+    @Transactional
+    public void expire(UUID paymentId) {
+
+        log.info("Expiring payment. paymentId={}", paymentId);
+
+        Payment payment = findEntity(paymentId);
+
+        PaymentStatus currentStatus = payment.getStatus();
+        PaymentStatus newStatus = PaymentStatus.EXPIRED;
+
+        paymentStatusTransitionService.validate(
+                currentStatus,
+                newStatus
+        );
+
+        payment.setStatus(newStatus);
+
+        Payment updatedPayment = paymentRepository.save(payment);
+
+        paymentStatusHistoryService.record(
+                updatedPayment,
+                currentStatus,
+                newStatus
+        );
+
+        paymentEventService.record(
+                updatedPayment,
+                PaymentEventType.PAYMENT_EXPIRED,
+                "Payment expired successfully"
+        );
+
+        log.info(
+                "Payment expired successfully. paymentId={}, fromStatus={}, toStatus={}",
+                paymentId,
+                currentStatus,
+                newStatus
+        );
     }
 }
