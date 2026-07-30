@@ -1,16 +1,21 @@
 package com.well.tech.next.pay.controller;
 
+import com.well.tech.next.pay.common.exceptions.ApiError;
 import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.PaymentFilterRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
 import com.well.tech.next.pay.dto.request.payment.UpdatePaymentStatusRequest;
+import com.well.tech.next.pay.dto.response.payment.PaymentEventResponse;
 import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
 import com.well.tech.next.pay.dto.response.payment.PaymentStatusHistoryResponse;
+import com.well.tech.next.pay.service.PaymentEventService;
 import com.well.tech.next.pay.service.PaymentService;
 import com.well.tech.next.pay.service.PaymentStatusHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -39,7 +44,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final PaymentStatusHistoryService paymentStatusHistoryService;
-
+    private final PaymentEventService paymentEventService;
 
     @Operation(
             summary = "Create payment",
@@ -273,7 +278,7 @@ public class PaymentController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void refund(
             @PathVariable UUID paymentId
-    ) {
+    ) throws InterruptedException {
         paymentService.refund(paymentId);
     }
 
@@ -298,5 +303,35 @@ public class PaymentController {
             @PathVariable UUID paymentId
     ) {
         return paymentService.retry(paymentId);
+    }
+
+    @Operation(
+            summary = "Get payment events",
+            description = "Returns the audit events associated with a payment."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment events retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Payment not found",
+                    content = @Content(
+                            schema = @Schema(implementation = ApiError.class)
+                    )
+            )
+    })
+    @GetMapping("/{paymentId}/events")
+    public List<PaymentEventResponse> getEvents(
+            @Parameter(
+                    description = "Payment unique identifier",
+                    required = true,
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable UUID paymentId
+    ) {
+
+        return paymentEventService.findByPaymentId(paymentId);
     }
 }

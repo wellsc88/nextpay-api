@@ -1,5 +1,6 @@
 package com.well.tech.next.pay.service;
 
+import com.well.tech.next.pay.common.enums.PaymentEventType;
 import com.well.tech.next.pay.common.enums.PaymentStatus;
 import com.well.tech.next.pay.common.exceptions.validation.PaymentNotFoundException;
 import com.well.tech.next.pay.dto.request.payment.PaymentWebhookRequest;
@@ -20,6 +21,8 @@ public class PaymentWebhookService {
     private final PaymentRepository paymentRepository;
     private final WebhookEventRepository webhookEventRepository;
     private final PaymentStatusTransitionService paymentStatusTransitionService;
+    private final PaymentStatusHistoryService paymentStatusHistoryService;
+    private final PaymentEventService paymentEventService;
 
     @Transactional
     public void process(PaymentWebhookRequest request) {
@@ -64,7 +67,23 @@ public class PaymentWebhookService {
 
         payment.setStatus(newStatus);
 
-        paymentRepository.save(payment);
+        Payment updatedPayment = paymentRepository.save(payment);
+
+        paymentStatusHistoryService.record(
+                updatedPayment,
+                currentStatus,
+                newStatus
+        );
+
+        paymentEventService.record(
+                updatedPayment,
+                PaymentEventType.WEBHOOK_PROCESSED,
+                String.format(
+                        "Webhook processed. Status changed from %s to %s",
+                        currentStatus,
+                        newStatus
+                )
+        );
 
         WebhookEvent webhookEvent = WebhookEvent.builder()
                 .eventId(request.eventId())
