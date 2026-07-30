@@ -58,6 +58,28 @@ public final class PaymentSpecification {
                 );
             }
 
+            if (filter.reference() != null &&
+                    !filter.reference().isBlank()) {
+
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.like(
+                                criteriaBuilder.upper(root.get("reference")),
+                                "%" + filter.reference().toUpperCase() + "%"
+                        )
+                );
+            }
+
+            if (filter.parentPaymentId() != null) {
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.equal(
+                                root.get("parentPayment").get("id"),
+                                filter.parentPaymentId()
+                        )
+                );
+            }
+
             if (filter.minAmount() != null) {
                 predicate = criteriaBuilder.and(
                         predicate,
@@ -94,6 +116,46 @@ public final class PaymentSpecification {
                         criteriaBuilder.lessThanOrEqualTo(
                                 root.get("createdAt"),
                                 filter.createdAtTo()
+                        )
+                );
+            }
+
+            if (filter.updatedAtFrom() != null) {
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.greaterThanOrEqualTo(
+                                root.get("updatedAt"),
+                                filter.updatedAtFrom()
+                        )
+                );
+            }
+
+            if (filter.updatedAtTo() != null) {
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.lessThanOrEqualTo(
+                                root.get("updatedAt"),
+                                filter.updatedAtTo()
+                        )
+                );
+            }
+
+            if (filter.expiresAtFrom() != null) {
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.greaterThanOrEqualTo(
+                                root.get("expiresAt"),
+                                filter.expiresAtFrom()
+                        )
+                );
+            }
+
+            if (filter.expiresAtTo() != null) {
+                predicate = criteriaBuilder.and(
+                        predicate,
+                        criteriaBuilder.lessThanOrEqualTo(
+                                root.get("expiresAt"),
+                                filter.expiresAtTo()
                         )
                 );
             }

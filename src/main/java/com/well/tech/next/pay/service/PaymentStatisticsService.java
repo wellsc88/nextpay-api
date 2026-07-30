@@ -1,8 +1,10 @@
 package com.well.tech.next.pay.service;
 
 import com.well.tech.next.pay.common.enums.PaymentStatus;
+import com.well.tech.next.pay.dto.request.payment.PaymentStatisticsFilterRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentStatisticsResponse;
 import com.well.tech.next.pay.repository.PaymentRepository;
+import com.well.tech.next.pay.repository.PaymentStatisticsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,33 +18,35 @@ import java.math.RoundingMode;
 @RequiredArgsConstructor
 public class PaymentStatisticsService {
 
-    private final PaymentRepository paymentRepository;
+    private final PaymentStatisticsRepository paymentStatisticsRepository;
 
     @Transactional(readOnly = true)
-    public PaymentStatisticsResponse getStatistics() {
+    public PaymentStatisticsResponse getStatistics(
+            PaymentStatisticsFilterRequest filter
+    ) {
 
-        log.info("Retrieving payment statistics");
+        log.info(
+                "Retrieving payment statistics. filter={}",
+                filter
+        );
 
-        PaymentStatisticsResponse statistics = new PaymentStatisticsResponse(
-                paymentRepository.count(),
-                paymentRepository.countByStatus(PaymentStatus.PENDING),
-                paymentRepository.countByStatus(PaymentStatus.PROCESSING),
-                paymentRepository.countByStatus(PaymentStatus.APPROVED),
-                paymentRepository.countByStatus(PaymentStatus.DECLINED),
-                paymentRepository.countByStatus(PaymentStatus.CANCELLED),
-                paymentRepository.countByStatus(PaymentStatus.REFUNDED),
-                paymentRepository.countByStatus(PaymentStatus.EXPIRED),
-                money(paymentRepository.sumAmount()),
-                money(paymentRepository.sumAmountByStatus(PaymentStatus.APPROVED)),
-                money(paymentRepository.sumAmountByStatus(PaymentStatus.REFUNDED))
+        PaymentStatisticsResponse statistics =
+                paymentStatisticsRepository.getStatistics(filter);
+
+        log.info(
+                """
+                Payment statistics retrieved successfully.
+                totalPayments={},
+                approvedPayments={},
+                totalAmount={},
+                approvedAmount={}
+                """,
+                statistics.totalPayments(),
+                statistics.approvedPayments(),
+                statistics.totalAmount(),
+                statistics.approvedAmount()
         );
 
         return statistics;
-    }
-
-    private BigDecimal money(BigDecimal value) {
-        return value == null
-                ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
-                : value.setScale(2, RoundingMode.HALF_UP);
     }
 }
