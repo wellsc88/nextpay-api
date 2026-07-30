@@ -41,6 +41,7 @@ public class PaymentService {
     private final PaymentStatusHistoryService paymentStatusHistoryService;
     private final PaymentStatusTransitionService paymentStatusTransitionService;
     private final PaymentEventService paymentEventService;
+    private final PaymentReferenceService paymentReferenceService;
 
     @Transactional
     public PaymentResponse create(
@@ -72,6 +73,10 @@ public class PaymentService {
         Payment payment = paymentMapper.toEntity(
                 request,
                 customer
+        );
+
+        payment.setReference(
+                paymentReferenceService.generateReference()
         );
 
         payment.setExpiresAt(
@@ -421,5 +426,28 @@ public class PaymentService {
                     "Payment has expired"
             );
         }
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentResponse findByReference(String reference) {
+
+        log.info(
+                "Finding payment by reference. reference={}",
+                reference
+        );
+
+        Payment payment = paymentRepository.findByReference(reference)
+                .orElseThrow(() -> {
+                    log.warn(
+                            "Payment not found. reference={}",
+                            reference
+                    );
+
+                    return new ResourceNotFoundException(
+                            "Payment not found"
+                    );
+                });
+
+        return paymentMapper.toResponse(payment);
     }
 }

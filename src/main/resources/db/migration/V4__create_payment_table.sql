@@ -8,6 +8,7 @@ CREATE TABLE payment (
      status VARCHAR(20) NOT NULL,
      payment_method VARCHAR(20) NOT NULL,
      description VARCHAR(255),
+     reference VARCHAR(30) NOT NULL UNIQUE,
      created_at TIMESTAMP NOT NULL,
      updated_at TIMESTAMP NOT NULL,
      expires_at TIMESTAMP,
@@ -17,9 +18,12 @@ CREATE TABLE payment (
 
      CONSTRAINT fk_payment_customer
          FOREIGN KEY (customer_id)
-             REFERENCES customer(id)
+             REFERENCES customer(id),
 
      CONSTRAINT fk_payment_parent
          FOREIGN KEY (parent_payment_id)
-             REFERENCES payment(id)
+             REFERENCES payment(id),
+
+     CONSTRAINT uk_payments_reference
+         UNIQUE(reference)
 );

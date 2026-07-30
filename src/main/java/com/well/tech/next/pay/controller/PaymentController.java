@@ -365,4 +365,19 @@ public class PaymentController {
     ) {
         paymentService.expire(paymentId);
     }
+
+    @GetMapping("/reference/{reference}")
+    @Operation(
+            summary = "Find payment by reference",
+            description = "Retrieves a payment using its unique reference"
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Payment found"),
+            @ApiResponse(responseCode = "404", description = "Payment not found")
+    })
+    public PaymentResponse findByReference(
+            @PathVariable String reference
+    ) {
+        return paymentService.findByReference(reference);
+    }
 }

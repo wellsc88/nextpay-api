@@ -63,6 +63,11 @@ public record PaymentResponse(
         )
         String description,
 
+        @Schema(
+                description = "Payment reference",
+                example = "PAY-20260730-8F3A1C"
+        )
+        String reference,
 
         @Schema(
                 description = "Payment creation date/time",
@@ -88,6 +93,7 @@ public record PaymentResponse(
                 payment.getStatus(),
                 payment.getPaymentMethod(),
                 payment.getDescription(),
+                payment.getReference(),
                 payment.getCreatedAt(),
                 payment.getUpdatedAt()
         );

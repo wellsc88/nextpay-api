@@ -12,9 +12,9 @@ import java.util.UUID;
 public interface PaymentRepository extends JpaRepository<Payment, UUID>,
         JpaSpecificationExecutor<Payment> {
 
-    List<Payment> findByCustomerId(UUID customerId);
-
-    List<Payment> findByStatus(PaymentStatus status);
-
     Optional<Payment> findByIdempotencyKey(String idempotencyKey);
+
+    Optional<Payment> findByReference(String reference);
+
+    boolean existsByReference(String reference);
 }
