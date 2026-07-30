@@ -1,10 +1,7 @@
 package com.well.tech.next.pay.controller;
 
 import com.well.tech.next.pay.common.exceptions.ApiError;
-import com.well.tech.next.pay.dto.request.payment.CreatePaymentRequest;
-import com.well.tech.next.pay.dto.request.payment.PaymentFilterRequest;
-import com.well.tech.next.pay.dto.request.payment.UpdatePaymentRequest;
-import com.well.tech.next.pay.dto.request.payment.UpdatePaymentStatusRequest;
+import com.well.tech.next.pay.dto.request.payment.*;
 import com.well.tech.next.pay.dto.response.payment.*;
 import com.well.tech.next.pay.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -404,10 +401,11 @@ public class PaymentController {
         return paymentTimelineService.findTimeline(paymentId);
     }
 
+
     @GetMapping("/statistics")
     @Operation(
             summary = "Get payment statistics",
-            description = "Retrieves aggregated payment statistics"
+            description = "Retrieves aggregated payment statistics using optional filters."
     )
     @ApiResponses({
             @ApiResponse(
@@ -415,7 +413,10 @@ public class PaymentController {
                     description = "Payment statistics retrieved successfully"
             )
     })
-    public PaymentStatisticsResponse getStatistics() {
-        return paymentStatisticsService.getStatistics();
+    public PaymentStatisticsResponse getStatistics(
+            @Valid
+            @ParameterObject PaymentStatisticsFilterRequest filter
+    ) {
+        return paymentStatisticsService.getStatistics(filter);
     }
 }
