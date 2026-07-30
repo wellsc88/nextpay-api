@@ -11,4 +11,6 @@ public interface PaymentEventRepository
 
     List<PaymentEvent> findByPaymentIdOrderByCreatedAtDesc(UUID paymentId);
 
+    List<PaymentEvent> findByPaymentIdOrderByCreatedAtAsc(UUID paymentId);
+
 }

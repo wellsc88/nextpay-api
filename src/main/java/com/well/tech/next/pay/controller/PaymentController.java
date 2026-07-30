@@ -8,9 +8,11 @@ import com.well.tech.next.pay.dto.request.payment.UpdatePaymentStatusRequest;
 import com.well.tech.next.pay.dto.response.payment.PaymentEventResponse;
 import com.well.tech.next.pay.dto.response.payment.PaymentResponse;
 import com.well.tech.next.pay.dto.response.payment.PaymentStatusHistoryResponse;
+import com.well.tech.next.pay.dto.response.payment.PaymentTimelineResponse;
 import com.well.tech.next.pay.service.PaymentEventService;
 import com.well.tech.next.pay.service.PaymentService;
 import com.well.tech.next.pay.service.PaymentStatusHistoryService;
+import com.well.tech.next.pay.service.PaymentTimelineService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -45,6 +47,7 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final PaymentStatusHistoryService paymentStatusHistoryService;
     private final PaymentEventService paymentEventService;
+    private final PaymentTimelineService paymentTimelineService;
 
     @Operation(
             summary = "Create payment",
@@ -379,5 +382,30 @@ public class PaymentController {
             @PathVariable String reference
     ) {
         return paymentService.findByReference(reference);
+    }
+
+    @GetMapping("/{paymentId}/timeline")
+    @Operation(
+            summary = "Get payment timeline",
+            description = "Returns the chronological timeline of events and status changes for a payment"
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Payment timeline retrieved successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Payment not found"
+            )
+    })
+    public List<PaymentTimelineResponse> getTimeline(
+            @Parameter(
+                    description = "Payment unique identifier",
+                    example = "550e8400-e29b-41d4-a716-446655440000"
+            )
+            @PathVariable UUID paymentId
+    ) {
+        return paymentTimelineService.findTimeline(paymentId);
     }
 }
