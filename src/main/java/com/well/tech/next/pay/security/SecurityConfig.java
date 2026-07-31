@@ -40,7 +40,11 @@ public class SecurityConfig {
                                 ApiVersion.API_BASE_PATH + "/" +  ApiVersion.API_VERSION + "/users",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/actuator/health",
+                                "/actuator/info",
+                                "/actuator/metrics",
+                                "/actuator/prometheus"
                                 ).permitAll()
                         .requestMatchers(
                                 ApiVersion.API_BASE_PATH + "/" +  ApiVersion.API_VERSION + "/admin/**"

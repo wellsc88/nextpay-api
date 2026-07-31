@@ -44,3 +44,71 @@ jwt:
 payment:
   webhook:
     secret: ${PAYMENT_WEBHOOK_SECRET}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - info
+          - metrics
+          - prometheus
+
+  endpoint:
+    health:
+      show-details: always
+
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+  info:
+    env:
+      enabled: true
+    build:
+      enabled: true
+    git:
+      enabled: true
+
+info:
+  app:
+    name: ${spring.application.name}
+    environment: ${SPRING_PROFILES_ACTIVE:default}
+    category: Backend REST API
+    api-version: v1
+    authentication: JWT
+    database: PostgreSQL
+    migration: Flyway
+    observability:
+      metrics: Prometheus + Grafana
+      logging: Loki + Promtail
+    documentation: Swagger/OpenAPI
+
+  build:
+    name: ${project.name}
+    description: ${project.description}
+    version: ${project.version}
+    artifact: ${project.artifactId}
+    group: ${project.groupId}
+    time: ${maven.build.timestamp}
+
+  technology:
+    language: Java
+    java-version: ${java.version}
+    framework: Spring Boot
+
+  contact:
+    team: Backend Team
+
+  features:
+    authentication: JWT
+    database-migration: Flyway
+    monitoring: Prometheus + Grafana
+    logging: Loki + Promtail
+
+  git:
+    branch: ${git.branch}
+    commit:
+      id: ${git.commit.id}
+      time: ${git.commit.time}

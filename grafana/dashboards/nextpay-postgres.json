@@ -1,0 +1,198 @@
+{
+  "title": "NextPay PostgreSQL - Database Monitoring",
+  "uid": "postgres-postgres",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "PostgreSQL Status",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "pg_up{job=\"postgres\"}",
+          "legendFormat": "Database"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Database Size MB",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "pg_database_size_bytes{datname=\"postgres\"} / 1024 / 1024",
+          "legendFormat": "Size MB"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Active Connections",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "pg_stat_database_numbackends{datname=\"postgres\"}",
+          "legendFormat": "Connections"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Transactions per Second",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_xact_commit{datname=\"postgres\"}[5m])",
+          "legendFormat": "TPS"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Cache Hit Ratio %",
+      "type": "gauge",
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "expr": "(sum(pg_stat_database_blks_hit{datname=\"postgres\"}) / (sum(pg_stat_database_blks_hit{datname=\"postgres\"}) + sum(pg_stat_database_blks_read{datname=\"postgres\"}))) * 100",
+          "legendFormat": "Cache Hit %"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Commits vs Rollbacks",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 8,
+        "y": 6,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_xact_commit{datname=\"postgres\"}[5m])",
+          "legendFormat": "Commits"
+        },
+        {
+          "expr": "rate(pg_stat_database_xact_rollback{datname=\"postgres\"}[5m])",
+          "legendFormat": "Rollbacks"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Database Operations",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 16,
+        "y": 6,
+        "w": 8,
+        "h": 7
+      },
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_tup_inserted{datname=\"postgres\"}[5m])",
+          "legendFormat": "Inserted"
+        },
+        {
+          "expr": "rate(pg_stat_database_tup_updated{datname=\"postgres\"}[5m])",
+          "legendFormat": "Updated"
+        },
+        {
+          "expr": "rate(pg_stat_database_tup_deleted{datname=\"postgres\"}[5m])",
+          "legendFormat": "Deleted"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Rows Read",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(pg_stat_database_tup_fetched{datname=\"postgres\"}[5m])",
+          "legendFormat": "Rows fetched"
+        },
+        {
+          "expr": "rate(pg_stat_database_tup_returned{datname=\"postgres\"}[5m])",
+          "legendFormat": "Rows returned"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Database Connections",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "pg_stat_database_numbackends{datname=\"postgres\"}",
+          "legendFormat": "Active Connections"
+        }
+      ]
+    }
+  ]
+}

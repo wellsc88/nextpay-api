@@ -1,0 +1,220 @@
+{
+  "title": "NextPay API - Production Monitoring",
+  "uid": "nextpay-api",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "API Status",
+      "type": "stat",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "up{job=\"nextpay-api\"}",
+          "legendFormat": "API"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "steps": [
+              {
+                "color": "red",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "CPU Usage %",
+      "type": "stat",
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "process_cpu_usage{job=\"nextpay-api\"} * 100",
+          "legendFormat": "CPU"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "JVM Memory MB",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "sum(jvm_memory_used_bytes{job=\"nextpay-api\"}) / 1024 / 1024",
+          "legendFormat": "Memory MB"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Live Threads",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{job=\"nextpay-api\"}",
+          "legendFormat": "Threads"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Requests per Minute",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{job=\"nextpay-api\"}[1m]) * 60",
+          "legendFormat": "{{uri}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Average Response Time",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 6,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_sum{job=\"nextpay-api\"}[5m]) / rate(http_server_requests_seconds_count{job=\"nextpay-api\"}[5m])",
+          "legendFormat": "Latency"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "HTTP Errors 4xx / 5xx",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{job=\"nextpay-api\",status=~\"4..\"}[5m])",
+          "legendFormat": "4xx"
+        },
+        {
+          "expr": "rate(http_server_requests_seconds_count{job=\"nextpay-api\",status=~\"5..\"}[5m])",
+          "legendFormat": "5xx"
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "JVM Heap Memory",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "sum by(id)(jvm_memory_used_bytes{job=\"nextpay-api\",area=\"heap\"}) / 1024 / 1024",
+          "legendFormat": "{{id}} MB"
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "HikariCP Active Connections",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{job=\"nextpay-api\"}",
+          "legendFormat": "Active"
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "HikariCP Idle Connections",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 8,
+        "y": 22,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_idle{job=\"nextpay-api\"}",
+          "legendFormat": "Idle"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "HikariCP Pending Connections",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 16,
+        "y": 22,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_pending{job=\"nextpay-api\"}",
+          "legendFormat": "Pending"
+        }
+      ]
+    }
+  ]
+}
