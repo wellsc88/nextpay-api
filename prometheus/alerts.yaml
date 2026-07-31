@@ -1,0 +1,165 @@
+groups:
+  - name: nextpay-alerts
+    interval: 30s
+    rules:
+
+      # =========================
+      # API AVAILABILITY
+      # =========================
+
+      - alert: NextPayApiDown
+        expr: up{job="nextpay-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: nextpay-api
+        annotations:
+          summary: "NextPay API is down"
+          description: "The API has been unavailable for more than 1 minute."
+
+
+      # =========================
+      # POSTGRES AVAILABILITY
+      # =========================
+
+      - alert: PostgreSQLDown
+        expr: pg_up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgresql
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL exporter cannot connect to the database."
+
+
+      # =========================
+      # CPU
+      # =========================
+
+      - alert: HighCPUUsage
+        expr: process_cpu_usage{job="nextpay-api"} > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          service: nextpay-api
+        annotations:
+          summary: "High CPU usage detected"
+          description: "Application CPU usage is above 80% for more than 5 minutes."
+
+
+      # =========================
+      # JVM MEMORY
+      # =========================
+
+      - alert: HighJVMMemoryUsage
+        expr: |
+          (
+            sum(jvm_memory_used_bytes{job="nextpay-api", area="heap"})
+            /
+            sum(jvm_memory_max_bytes{job="nextpay-api", area="heap"})
+          ) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+          service: nextpay-api
+        annotations:
+          summary: "High JVM heap usage"
+          description: "JVM heap usage is above 85%."
+
+
+      # =========================
+      # HTTP ERRORS
+      # =========================
+
+      - alert: HighHttp5xxErrorRate
+        expr: |
+          rate(
+            http_server_requests_seconds_count{
+              job="nextpay-api",
+              status=~"5.."
+            }[5m]
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: nextpay-api
+        annotations:
+          summary: "High HTTP 5xx error rate"
+          description: "The API is returning a high number of server errors."
+
+
+      # =========================
+      # HTTP LATENCY
+      # =========================
+
+      - alert: HighHttpLatency
+        expr: |
+          (
+            rate(http_server_requests_seconds_sum{job="nextpay-api"}[5m])
+            /
+            rate(http_server_requests_seconds_count{job="nextpay-api"}[5m])
+          ) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: nextpay-api
+        annotations:
+          summary: "High API latency"
+          description: "Average HTTP response time is above 1 second."
+
+
+      # =========================
+      # DATABASE CONNECTIONS
+      # =========================
+
+      - alert: HighDatabaseConnections
+        expr: |
+          pg_stat_database_numbackends{datname="nextpay"} > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: postgresql
+        annotations:
+          summary: "High PostgreSQL connections"
+          description: "PostgreSQL has more than 80 active connections."
+
+
+      # =========================
+      # DATABASE CACHE
+      # =========================
+
+      - alert: LowPostgresCacheHitRatio
+        expr: |
+          (
+            sum(pg_stat_database_blks_hit{datname="nextpay"})
+            /
+            (
+              sum(pg_stat_database_blks_hit{datname="nextpay"})
+              +
+              sum(pg_stat_database_blks_read{datname="nextpay"})
+            )
+          ) * 100 < 90
+        for: 10m
+        labels:
+          severity: warning
+          service: postgresql
+        annotations:
+          summary: "Low PostgreSQL cache hit ratio"
+          description: "PostgreSQL cache hit ratio is below 90%."
+
+
+      # =========================
+      # DATABASE TRANSACTIONS
+      # =========================
+
+      - alert: HighPostgresRollbackRate
+        expr: |
+          rate(pg_stat_database_xact_rollback{datname="nextpay"}[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          service: postgresql
+        annotations:
+          summary: "High PostgreSQL rollback rate"
+          description: "Database rollback rate is above expected levels."
