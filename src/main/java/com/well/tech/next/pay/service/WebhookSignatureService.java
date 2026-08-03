@@ -1,6 +1,7 @@
 package com.well.tech.next.pay.service;
 
 import com.well.tech.next.pay.config.WebhookProperties;
+import com.well.tech.next.pay.service.abstraction.MacFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ public class WebhookSignatureService {
     private static final String HMAC_ALGORITHM = "HmacSHA256";
 
     private final WebhookProperties webhookProperties;
+    private final MacFactory macFactory;
 
     public boolean isTimestampValid(String timestamp) {
         try {
@@ -61,16 +63,19 @@ public class WebhookSignatureService {
             String timestamp,
             String signature
     ) {
+
         String signedPayload =
                 timestamp + "." + payload;
 
         String expectedSignature =
                 generateSignature(signedPayload);
 
+
         boolean valid = MessageDigest.isEqual(
                 expectedSignature.getBytes(StandardCharsets.UTF_8),
                 signature.getBytes(StandardCharsets.UTF_8)
         );
+
 
         if (valid) {
             log.info(
@@ -88,8 +93,12 @@ public class WebhookSignatureService {
     }
 
     public String generateSignature(String payload) {
+
         try {
-            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
+
+            Mac mac =
+                    macFactory.create(HMAC_ALGORITHM);
+
 
             SecretKeySpec secretKey =
                     new SecretKeySpec(
@@ -97,13 +106,19 @@ public class WebhookSignatureService {
                             HMAC_ALGORITHM
                     );
 
+
             mac.init(secretKey);
 
-            byte[] hash = mac.doFinal(
-                    payload.getBytes(StandardCharsets.UTF_8)
-            );
 
-            return HexFormat.of().formatHex(hash);
+            byte[] hash =
+                    mac.doFinal(
+                            payload.getBytes(StandardCharsets.UTF_8)
+                    );
+
+
+            return HexFormat.of()
+                    .formatHex(hash);
+
 
         } catch (GeneralSecurityException exception) {
 
@@ -111,6 +126,7 @@ public class WebhookSignatureService {
                     "Failed to generate webhook signature",
                     exception
             );
+
 
             throw new IllegalStateException(
                     "Failed to generate webhook signature",

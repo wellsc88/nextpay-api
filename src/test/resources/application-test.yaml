@@ -1,0 +1,18 @@
+spring:
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+
+  flyway:
+    enabled: true
+
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LW5leHRwYXktYXBpLWFwcGxpY2F0aW9u
+  expiration: 1800000
+  refresh-expiration: 604800000
+
+logging:
+  level:
+    root: WARN
+    com.well.tech.task.manager: INFO
